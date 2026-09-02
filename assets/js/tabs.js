@@ -11,8 +11,10 @@ function initTabs( container ) {
         const panelId = link.getAttribute( 'aria-controls' );
         const panel   = document.getElementById( panelId );
 
-        container.querySelectorAll( '.jtm-tab-link' ).forEach( function ( el ) {
+        container.querySelectorAll( '.jtm-tab-item' ).forEach( function ( el ) {
             el.classList.remove( 'jtm-active' );
+        } );
+        container.querySelectorAll( '.jtm-tab-link' ).forEach( function ( el ) {
             el.setAttribute( 'aria-selected', 'false' );
         } );
         container.querySelectorAll( '.jtm-tab-panel' ).forEach( function ( el ) {
@@ -20,7 +22,7 @@ function initTabs( container ) {
             el.hidden = true;
         } );
 
-        link.classList.add( 'jtm-active' );
+        link.closest( '.jtm-tab-item' ).classList.add( 'jtm-active' );
         link.setAttribute( 'aria-selected', 'true' );
         panel.classList.add( 'jtm-active' );
         panel.hidden = false;
