@@ -17,44 +17,48 @@ class JTM_Parser {
         $offset = 0;
         $length = strlen( $content );
 
-        // Solo el cierre {/tabs}/{/sliders} es obligatorio: Joomla permite omitir el contenedor de apertura.
-        while ( preg_match( '/\{\/(tabs|sliders)\}/i', $content, $close_m, PREG_OFFSET_CAPTURE, $offset ) ) {
-            $close_start = $close_m[0][1];
-            $close_len   = strlen( $close_m[0][0] );
-            $group_type  = strtolower( $close_m[1][0] );
-            $item_tag    = ( $group_type === 'tabs' ) ? 'tab' : 'slider';
+        while ( $offset < $length ) {
+            // El tipo de grupo lo decide el marcador (contenedor o item) que aparezca antes:
+            // así un {/sliders} anidado dentro de un tab nunca se confunde con el cierre del {tabs} exterior.
+            $tabs_pos    = self::find_first( $content, array( '{tabs}', '{tab ' ), $offset );
+            $sliders_pos = self::find_first( $content, array( '{sliders}', '{slider ' ), $offset );
 
-            $segment = substr( $content, $offset, $close_start - $offset );
+            if ( false === $tabs_pos && false === $sliders_pos ) {
+                break;
+            }
 
-            if ( preg_match( '/\{' . $group_type . '\}/i', $segment, $open_m, PREG_OFFSET_CAPTURE ) ) {
-                $group_start = $open_m[0][1];
-                $inner_start = $group_start + strlen( $open_m[0][0] );
-            } elseif ( preg_match( '/\{' . $item_tag . '\s+/i', $segment, $item_m, PREG_OFFSET_CAPTURE ) ) {
-                $group_start = $item_m[0][1];
-                $inner_start = $group_start;
+            if ( false !== $tabs_pos && ( false === $sliders_pos || $tabs_pos <= $sliders_pos ) ) {
+                $group_type = 'tabs';
+                $group_pos  = $tabs_pos;
             } else {
-                // Ni contenedor ni items: el cierre suelto se trata como texto plano.
-                $nodes[] = array(
-                    'type' => 'html',
-                    'html' => $segment . $close_m[0][0],
-                );
-                $offset = $close_start + $close_len;
-                continue;
+                $group_type = 'sliders';
+                $group_pos  = $sliders_pos;
             }
 
-            if ( $group_start > 0 ) {
+            $close_tag = '{/' . $group_type . '}';
+            $close_pos = stripos( $content, $close_tag, $group_pos );
+
+            if ( false === $close_pos ) {
+                break; // Grupo sin cierre: se deja como texto plano más abajo.
+            }
+
+            if ( $group_pos > $offset ) {
                 $nodes[] = array(
                     'type' => 'html',
-                    'html' => substr( $segment, 0, $group_start ),
+                    'html' => substr( $content, $offset, $group_pos - $offset ),
                 );
             }
+
+            $open_tag    = '{' . $group_type . '}';
+            $inner_start = ( stripos( $content, $open_tag, $group_pos ) === $group_pos ) ? $group_pos + strlen( $open_tag ) : $group_pos;
+            $item_tag    = ( $group_type === 'tabs' ) ? 'tab' : 'slider';
 
             $nodes[] = array(
                 'type'  => $group_type === 'tabs' ? 'tabgroup' : 'slidergroup',
-                'items' => self::parse_items( substr( $segment, $inner_start ), $item_tag ),
+                'items' => self::parse_items( substr( $content, $inner_start, $close_pos - $inner_start ), $item_tag ),
             );
 
-            $offset = $close_start + $close_len;
+            $offset = $close_pos + strlen( $close_tag );
         }
 
         if ( $offset < $length ) {
@@ -65,6 +69,20 @@ class JTM_Parser {
         }
 
         return $nodes;
+    }
+
+    /**
+     * Devuelve la posición más temprana (desde $offset) de cualquiera de los marcadores dados, o false.
+     */
+    private static function find_first( $content, array $needles, $offset ) {
+        $best = false;
+        foreach ( $needles as $needle ) {
+            $pos = stripos( $content, $needle, $offset );
+            if ( false !== $pos && ( false === $best || $pos < $best ) ) {
+                $best = $pos;
+            }
+        }
+        return $best;
     }
 
     /**
