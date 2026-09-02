@@ -10,6 +10,7 @@
     cursor: pointer;
     padding: 10px 16px;
     border: 1px solid transparent;
+    border-top: 3px solid transparent;
     border-bottom: none;
     background: #f5f5f5;
     font: inherit;
@@ -38,6 +39,7 @@
     padding: 10px 16px;
     background: #f5f5f5;
     border: none;
+    border-top: 3px solid transparent;
     font: inherit;
 }
 
@@ -45,24 +47,24 @@
     padding: 16px;
 }
 
-/* Colores estilo Joomla */
-.jtm-color-red .jtm-tab-link,
-.jtm-color-red .jtm-slider-toggle { background: #f8d7da; }
-.jtm-color-orange .jtm-tab-link,
-.jtm-color-orange .jtm-slider-toggle { background: #ffe5cc; }
-.jtm-color-yellow .jtm-tab-link,
-.jtm-color-yellow .jtm-slider-toggle { background: #fff3cd; }
-.jtm-color-green .jtm-tab-link,
-.jtm-color-green .jtm-slider-toggle { background: #d4edda; }
-.jtm-color-blue .jtm-tab-link,
-.jtm-color-blue .jtm-slider-toggle { background: #d1ecf1; }
-.jtm-color-purple .jtm-tab-link,
-.jtm-color-purple .jtm-slider-toggle { background: #e2d4f0; }
-.jtm-color-gray .jtm-tab-link,
-.jtm-color-grey .jtm-tab-link,
-.jtm-color-gray .jtm-slider-toggle,
-.jtm-color-grey .jtm-slider-toggle { background: #e2e3e5; }
-.jtm-color-black .jtm-tab-link,
-.jtm-color-black .jtm-slider-toggle { background: #333; color: #fff; }
-.jtm-color-white .jtm-tab-link,
-.jtm-color-white .jtm-slider-toggle { background: #fff; }
+/* Colores estilo Joomla: solo el borde superior marca el color de la pestaña/panel */
+.jtm-tab-link.jtm-color-red,
+.jtm-slider-toggle.jtm-color-red { border-top-color: #dc3545; }
+.jtm-tab-link.jtm-color-orange,
+.jtm-slider-toggle.jtm-color-orange { border-top-color: #fd7e14; }
+.jtm-tab-link.jtm-color-yellow,
+.jtm-slider-toggle.jtm-color-yellow { border-top-color: #ffc107; }
+.jtm-tab-link.jtm-color-green,
+.jtm-slider-toggle.jtm-color-green { border-top-color: #28a745; }
+.jtm-tab-link.jtm-color-blue,
+.jtm-slider-toggle.jtm-color-blue { border-top-color: #17a2b8; }
+.jtm-tab-link.jtm-color-purple,
+.jtm-slider-toggle.jtm-color-purple { border-top-color: #6f42c1; }
+.jtm-tab-link.jtm-color-gray,
+.jtm-tab-link.jtm-color-grey,
+.jtm-slider-toggle.jtm-color-gray,
+.jtm-slider-toggle.jtm-color-grey { border-top-color: #6c757d; }
+.jtm-tab-link.jtm-color-black,
+.jtm-slider-toggle.jtm-color-black { border-top-color: #000; }
+.jtm-tab-link.jtm-color-white,
+.jtm-slider-toggle.jtm-color-white { border-top-color: #ccc; }

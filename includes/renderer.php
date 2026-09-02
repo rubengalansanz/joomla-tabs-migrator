@@ -108,8 +108,8 @@ class JTM_Renderer {
             $is_active = ( $index === 0 );
 
             $nav .= sprintf(
-                '<li class="jtm-tab-item jtm-color-%1$s%2$s" role="presentation">
-                    <button type="button" id="%3$s" class="jtm-tab-link" role="tab" aria-selected="%4$s" aria-controls="%5$s">%6$s</button>
+                '<li class="jtm-tab-item%2$s" role="presentation">
+                    <button type="button" id="%3$s" class="jtm-tab-link jtm-color-%1$s" role="tab" aria-selected="%4$s" aria-controls="%5$s">%6$s</button>
                 </li>',
                 esc_attr( $item['color'] ),
                 $is_active ? ' jtm-active' : '',
@@ -145,9 +145,9 @@ class JTM_Renderer {
             $is_open  = ( $item['state'] === 'open' );
 
             $out .= sprintf(
-                '<div class="jtm-slider-item jtm-color-%1$s%2$s">
+                '<div class="jtm-slider-item%2$s">
                     <h3 class="jtm-slider-header">
-                        <button type="button" id="%3$s" class="jtm-slider-toggle" aria-expanded="%4$s" aria-controls="%5$s">%6$s</button>
+                        <button type="button" id="%3$s" class="jtm-slider-toggle jtm-color-%1$s" aria-expanded="%4$s" aria-controls="%5$s">%6$s</button>
                     </h3>
                     <div id="%5$s" class="jtm-slider-panel" role="region" aria-labelledby="%3$s"%7$s>%8$s</div>
                 </div>',
