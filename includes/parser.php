@@ -14,32 +14,50 @@ class JTM_Parser {
      */
     public static function parse( $content ) {
         $nodes  = array();
-        $pattern = '/\{(tabs|sliders)\}(.*?)\{\/\1\}/is';
-
         $offset = 0;
-        while ( preg_match( $pattern, $content, $m, PREG_OFFSET_CAPTURE, $offset ) ) {
-            $start = $m[0][1];
-            $len   = strlen( $m[0][0] );
+        $length = strlen( $content );
 
-            if ( $start > $offset ) {
+        // Solo el cierre {/tabs}/{/sliders} es obligatorio: Joomla permite omitir el contenedor de apertura.
+        while ( preg_match( '/\{\/(tabs|sliders)\}/i', $content, $close_m, PREG_OFFSET_CAPTURE, $offset ) ) {
+            $close_start = $close_m[0][1];
+            $close_len   = strlen( $close_m[0][0] );
+            $group_type  = strtolower( $close_m[1][0] );
+            $item_tag    = ( $group_type === 'tabs' ) ? 'tab' : 'slider';
+
+            $segment = substr( $content, $offset, $close_start - $offset );
+
+            if ( preg_match( '/\{' . $group_type . '\}/i', $segment, $open_m, PREG_OFFSET_CAPTURE ) ) {
+                $group_start = $open_m[0][1];
+                $inner_start = $group_start + strlen( $open_m[0][0] );
+            } elseif ( preg_match( '/\{' . $item_tag . '\s+/i', $segment, $item_m, PREG_OFFSET_CAPTURE ) ) {
+                $group_start = $item_m[0][1];
+                $inner_start = $group_start;
+            } else {
+                // Ni contenedor ni items: el cierre suelto se trata como texto plano.
                 $nodes[] = array(
                     'type' => 'html',
-                    'html' => substr( $content, $offset, $start - $offset ),
+                    'html' => $segment . $close_m[0][0],
+                );
+                $offset = $close_start + $close_len;
+                continue;
+            }
+
+            if ( $group_start > 0 ) {
+                $nodes[] = array(
+                    'type' => 'html',
+                    'html' => substr( $segment, 0, $group_start ),
                 );
             }
 
-            $group_type = strtolower( $m[1][0] ); // tabs | sliders
-            $inner      = $m[2][0];
-
             $nodes[] = array(
                 'type'  => $group_type === 'tabs' ? 'tabgroup' : 'slidergroup',
-                'items' => self::parse_items( $inner, $group_type === 'tabs' ? 'tab' : 'slider' ),
+                'items' => self::parse_items( substr( $segment, $inner_start ), $item_tag ),
             );
 
-            $offset = $start + $len;
+            $offset = $close_start + $close_len;
         }
 
-        if ( $offset < strlen( $content ) ) {
+        if ( $offset < $length ) {
             $nodes[] = array(
                 'type' => 'html',
                 'html' => substr( $content, $offset ),
@@ -72,7 +90,8 @@ class JTM_Parser {
             // Elimina el cierre {/tab} o {/slider} si existe al final del bloque.
             $body = preg_replace( '/\{\/' . $tag . '\}\s*$/i', '', $body );
 
-            $items[] = self::parse_header( $header_raw, $tag ) + array( 'body' => trim( $body ) );
+            // Parseo recursivo: un tab puede contener un grupo {slider}/{sliders} anidado.
+            $items[] = self::parse_header( $header_raw, $tag ) + array( 'body' => self::parse( trim( $body ) ) );
         }
 
         return $items;

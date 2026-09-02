@@ -28,6 +28,73 @@ class JTM_Renderer {
         return $out;
     }
 
+    /**
+     * Renderiza el body de un item, ya parseado recursivamente (puede contener grupos anidados).
+     */
+    private static function render_body( array $nodes ) {
+        $out = '';
+        foreach ( $nodes as $node ) {
+            switch ( $node['type'] ) {
+                case 'html':
+                    $out .= wpautop( self::markdown_to_html( $node['html'] ) );
+                    break;
+                case 'tabgroup':
+                    $out .= self::render_tabgroup( $node['items'] );
+                    break;
+                case 'slidergroup':
+                    $out .= self::render_slidergroup( $node['items'] );
+                    break;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Convierte **texto** en <strong>texto</strong> (aplicar tras esc_html).
+     */
+    private static function convert_bold( $text ) {
+        return preg_replace( '/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $text );
+    }
+
+    /**
+     * Convierte enlaces e imágenes en sintaxis Markdown básica a HTML.
+     */
+    private static function markdown_to_html( $text ) {
+        // Imagen enlazada: [![alt](img)](url)
+        $text = preg_replace_callback(
+            '/\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)/',
+            function ( $m ) {
+                return sprintf(
+                    '<a href="%1$s"><img src="%2$s" alt="%3$s" /></a>',
+                    esc_url( $m[3] ),
+                    esc_url( $m[2] ),
+                    esc_attr( $m[1] )
+                );
+            },
+            $text
+        );
+
+        // Imagen suelta: ![alt](img)
+        $text = preg_replace_callback(
+            '/!\[([^\]]*)\]\(([^)]+)\)/',
+            function ( $m ) {
+                return sprintf( '<img src="%1$s" alt="%2$s" />', esc_url( $m[2] ), esc_attr( $m[1] ) );
+            },
+            $text
+        );
+
+        // Enlace suelto: [texto](url)
+        $text = preg_replace_callback(
+            '/\[([^\]]+)\]\(([^)]+)\)/',
+            function ( $m ) {
+                return sprintf( '<a href="%1$s">%2$s</a>', esc_url( $m[2] ), $m[1] );
+            },
+            $text
+        );
+
+        return $text;
+    }
+
     private static function render_tabgroup( array $items ) {
         self::$instance_counter++;
         $group_id = 'jtm-tabs-' . self::$instance_counter;
@@ -49,7 +116,7 @@ class JTM_Renderer {
                 esc_attr( $tab_id ),
                 $is_active ? 'true' : 'false',
                 esc_attr( $panel_id ),
-                esc_html( $item['title'] )
+                self::convert_bold( esc_html( $item['title'] ) )
             );
 
             $panels .= sprintf(
@@ -58,7 +125,7 @@ class JTM_Renderer {
                 $is_active ? ' jtm-active' : '',
                 esc_attr( $tab_id ),
                 $is_active ? '' : ' hidden',
-                wpautop( $item['body'] )
+                self::render_body( $item['body'] )
             );
         }
         $nav .= '</ul>';
@@ -89,9 +156,9 @@ class JTM_Renderer {
                 esc_attr( $header_id ),
                 $is_open ? 'true' : 'false',
                 esc_attr( $panel_id ),
-                esc_html( $item['title'] ),
+                self::convert_bold( esc_html( $item['title'] ) ),
                 $is_open ? '' : ' hidden',
-                wpautop( $item['body'] )
+                self::render_body( $item['body'] )
             );
         }
 
