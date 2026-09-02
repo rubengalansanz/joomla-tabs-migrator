@@ -42,41 +42,41 @@ require_once __DIR__ . '/includes/renderer.php';
 
 // Contenido Joomla de prueba (pega aquí cualquier otro fragmento que quieras probar).
 $content = <<<'JOOMLA'
-{tab Texto |green}
+{tab Información general|green}
 
-1. La Junta Consultiva de Contratación Administrativa del Estado pondrá a disposición de todos los órganos de contratación una plataforma electrónica.
+1. Este contenido sirve para comprobar que las pestañas se muestran correctamente en el navegador.
 
-2. La plataforma deberá contar con un dispositivo que permita acreditar fehacientemente el inicio de la difusión pública.
+2. El texto de prueba incluye varios párrafos y caracteres especiales como á, é, í, ó, ú y ñ.
 
-{tab Desarrollo Reglamentario|blue}
+{tab Documentación|blue}
 
 * Sin referencias *
 
-{tab Juntas Consultivas|orange}
+{tab Recursos relacionados|orange}
 
-{slider JCCAMEH 31/2011. Órganos y entidades que deben entenderse sujetas a **la obligación de integración de su perfil de contratante**.}
+{slider Documento de ejemplo 1 sobre **información importante para la prueba**.}
 
-1. La obligación que impone el artículo 309 de la Ley de Contratos del Sector Público a los órganos de contratación.
+1. Este panel comprueba el comportamiento de un slider anidado dentro de una pestaña.
 
-Ver texto completo[![pdf](https://csp.alamoconsulting.com/wp-content/uploads/pdf.png)](https://csp.alamoconsulting.com/wp-content/uploads/JCCAMEH-31-2011.pdf)
+Ver documento de ejemplo[![pdf](https://example.com/pdf-icon.png)](https://example.com/documento-1.pdf)
 
-{slider JCCAMEH Informe 72/2008. Configuración del **perfil del contratante** de cada órgano de contratación.}
+{slider Documento de ejemplo 2 sobre la configuración del **contenido de prueba**.}
 
-La organización interna de la difusión de información sobre los contratos establecida en la LCSP en las Corporaciones locales.
+Este segundo panel permite verificar que varios sliders pueden convivir dentro de la misma pestaña.
 
-Ver texto completo [![pdf](https://csp.alamoconsulting.com/wp-content/uploads/pdf.png)](https://csp.alamoconsulting.com/wp-content/uploads/JCCAMEH-72-2008.pdf)
+Ver documento de ejemplo [![pdf](https://example.com/pdf-icon.png)](https://example.com/documento-2.pdf)
 
 {/sliders}
 
-{tab Otros|white}
+{tab Otros contenidos|white}
 
-Guía del Operador Económico en la Plataforma de Contratación del Sector Público
+Guía de prueba del plugin Joomla Tabs Migrator
 
-Descargar la Guía [![pdf](https://csp.alamoconsulting.com/wp-content/uploads/pdf.png)](https://csp.alamoconsulting.com/wp-content/uploads/GuiaOperadorEconomico_v03.00.pdf)
+Descargar la guía de ejemplo [![pdf](https://example.com/pdf-icon.png)](https://example.com/guia-de-ejemplo.pdf)
 
-{slider PRÁCTICO CSP sobre **El Perfil de Contratante y la Plataforma de Contratación del Sector Publico**.}
+{slider Prueba adicional sobre **pestañas y paneles desplegables**.}
 
-Contenido de ejemplo del práctico, con [un enlace normal](https://csp.alamoconsulting.com/) de prueba.
+Contenido de ejemplo con [un enlace normal](https://example.com/) de prueba.
 
 {/sliders}
 
