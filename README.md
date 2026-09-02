@@ -25,6 +25,10 @@ Cuando un sitio se traslada de Joomla a WordPress, el contenido de los artículo
 - `{sliders}` … `{/sliders}` (contenedor de acordeón)
 - `{slider Título|color}`, `{slider Título|close}`, `{slider Título|open}`
 - Colores admitidos: `red`, `orange`, `yellow`, `green`, `blue`, `purple`, `gray`/`grey`, `black`, `white` o valores hexadecimales (`#rrggbb`)
+- **Contenedores de apertura opcionales**: Joomla permite omitir `{tabs}`/`{sliders}` y dejar solo los items y el cierre (`{/tabs}`/`{/sliders}`); el parser detecta el grupo igualmente.
+- **Grupos anidados**: un `{slider}...{/sliders}` puede aparecer dentro del cuerpo de un `{tab}`, y se procesa de forma recursiva.
+- **Negrita**: `**texto**` dentro de títulos o cuerpo se convierte en `<strong>`.
+- **Enlaces e imágenes estilo Markdown** en el cuerpo: `[texto](url)` y `![alt](url)` (incluida la combinación `[![alt](img)](url)`) se convierten a HTML.
 
 ## Estructura del plugin
 
@@ -32,15 +36,26 @@ Cuando un sitio se traslada de Joomla a WordPress, el contenido de los artículo
 joomla-tabs-migrator/
 ├── assets/
 │   ├── css/
-│   │   └── tabs.css       # Estilos base y variantes de color
+│   │   └── tabs.css       # Estilos base y variantes de color (borde superior)
 │   └── js/
 │       └── tabs.js        # Interactividad de pestañas y sliders
 ├── includes/
-│   ├── parser.php         # Detecta y estructura las etiquetas Joomla
+│   ├── parser.php         # Detecta y estructura las etiquetas Joomla (recursivo)
 │   └── renderer.php       # Convierte el árbol de nodos en HTML
 ├── joomla-tabs-migrator.php  # Bootstrap del plugin
+├── test-local.php         # Arnés de prueba standalone (sin necesidad de WordPress)
 └── README.md
 ```
+
+## Probar en local sin WordPress
+
+El archivo [test-local.php](test-local.php) define stubs mínimos de las funciones de WordPress usadas (`esc_html`, `esc_attr`, `esc_url`, `sanitize_title`, `wpautop`) para poder ejecutar el parser y el renderer con PHP puro:
+
+```bash
+php -S localhost:8000
+```
+
+Abre `http://localhost:8000/test-local.php` y sustituye la variable `$content` por cualquier fragmento de contenido migrado que quieras validar.
 
 ## A quién va dirigido
 
@@ -55,3 +70,8 @@ Este tipo de plugin es especialmente útil para:
 - **Ligero y sin dependencias**: JavaScript vanilla y CSS mínimo, sin cargar librerías externas.
 - **Accesible por diseño**: soporte de atributos ARIA desde la base, no como añadido posterior.
 - **Extensible**: la lógica de parseo está separada del renderizado, por lo que es sencillo añadir soporte a nuevas variantes de sintaxis si aparecen en el contenido migrado.
+
+## Notas de diseño
+
+- El color asignado a cada pestaña/slider (`|green`, `|blue`, etc.) se representa como un **borde superior de 3px**, no como relleno de fondo, para evitar conflictos visuales con el CSS del tema activo de WordPress.
+- La clase `jtm-active` marca tanto el elemento de navegación seleccionado como el panel visible; se actualiza dinámicamente al hacer clic (ver [assets/js/tabs.js](assets/js/tabs.js)).
