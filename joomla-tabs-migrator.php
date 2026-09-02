@@ -3,7 +3,8 @@
  * Plugin Name: Joomla Tabs Migrator
  * Description: Convierte la sintaxis de tabs/sliders de Joomla ({tab}, {slider}, etc.) a HTML nativo de WordPress.
  * Version: 1.0.0
- * Author: Tu nombre
+ * Author: Rubén Rafael Galán Sanz
+ * Author URI: https://github.com/rubengalansanz
  * Text Domain: joomla-tabs-migrator
  */
 
