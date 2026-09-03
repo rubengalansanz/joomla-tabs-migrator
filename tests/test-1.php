@@ -5,7 +5,7 @@
  *
  * Uso:
  *   php -S localhost:8000
- *   Abrir http://localhost:8000/test-1.php en el navegador
+ *   Abrir http://localhost:8000/tests/test-1.php en el navegador
  */
 
 define( 'ABSPATH', __DIR__ . '/' );
