@@ -37,8 +37,8 @@ function wpautop( $text ) {
     return implode( "\n", $html );
 }
 
-require_once __DIR__ . '/includes/parser.php';
-require_once __DIR__ . '/includes/renderer.php';
+require_once __DIR__ . '/../includes/parser.php';
+require_once __DIR__ . '/../includes/renderer.php';
 
 // Contenido Joomla de prueba (pega aquí cualquier otro fragmento que quieras probar).
 $content = <<<'JOOMLA'
@@ -91,13 +91,13 @@ $html = JTM_Renderer::render( $tree );
 <head>
     <meta charset="UTF-8">
     <title>Prueba local — Joomla Tabs Migrator</title>
-    <link rel="stylesheet" href="assets/css/tabs.css">
+    <link rel="stylesheet" href="../assets/css/tabs.css">
     <style>body { max-width: 800px; margin: 40px auto; font-family: sans-serif; }</style>
 </head>
 <body>
     <h1>Prueba local del contenido migrado</h1>
     <?php echo $html; ?>
-
-    <script src="assets/js/tabs.js"></script>
+    
+    <script src="../assets/js/tabs.js"></script>
 </body>
 </html>
