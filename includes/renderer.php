@@ -120,7 +120,7 @@ class JTM_Renderer {
             );
 
             $panels .= sprintf(
-                '<div id="%1$s" class="jtm-tab-panel%2$s" role="tabpanel" aria-labelledby="%3$s"%4$s>%5$s</div>',
+                '<div id="%1$s" class="jtm-tab-panel%2$s" role="tabpanel" aria-labelledby="%3$s" %4$s>%5$s</div>',
                 esc_attr( $panel_id ),
                 $is_active ? ' jtm-active' : '',
                 esc_attr( $tab_id ),
@@ -149,7 +149,7 @@ class JTM_Renderer {
                     <h3 class="jtm-slider-header">
                         <button type="button" id="%3$s" class="jtm-slider-toggle jtm-color-%1$s" aria-expanded="%4$s" aria-controls="%5$s">%6$s</button>
                     </h3>
-                    <div id="%5$s" class="jtm-slider-panel" role="region" aria-labelledby="%3$s"%7$s>%8$s</div>
+                    <div id="%5$s" class="jtm-slider-panel" role="region" aria-labelledby="%3$s" %7$s>%8$s</div>
                 </div>',
                 esc_attr( $item['color'] ),
                 $is_open ? ' jtm-active' : '',
