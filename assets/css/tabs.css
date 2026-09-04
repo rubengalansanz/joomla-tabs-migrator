@@ -1,5 +1,19 @@
+/* El atributo hidden lo gestiona el JS (y el renderer); este guard evita que el
+   display propio del tema lo anule. */
+.jtm-tab-panel[hidden],
+.jtm-slider-panel[hidden] {
+    display: none !important;
+}
+
+/* Deja margen al saltar a un panel vía hash (cabeceras fijas). */
+.jtm-tabs,
+.jtm-sliders {
+    scroll-margin-top: 80px;
+}
+
 .jtm-tabs .jtm-tab-nav {
     display: flex;
+    flex-wrap: wrap;
     list-style: none;
     margin: 0 0 -1px;
     padding: 0;
@@ -25,6 +39,14 @@
 .jtm-tab-panel {
     padding: 16px;
     border: 1px solid #ccc;
+    min-width: 0;
+}
+
+/* Foco visible por teclado (el JS usa roving tabindex en las pestañas). */
+.jtm-tab-link:focus-visible,
+.jtm-slider-toggle:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
 }
 
 .jtm-sliders .jtm-slider-item {
@@ -47,7 +69,11 @@
     padding: 16px;
 }
 
-/* Colores estilo Joomla: solo el borde superior marca el color de la pestaña/panel */
+/* Colores estilo Joomla: solo el borde superior marca el color de la pestaña/panel.
+   jtm-color-default no tiñe (hereda el transparente base) y jtm-color-custom
+   recibe el color vía style="border-top-color:..." inline desde el renderer. */
+.jtm-tab-link.jtm-color-default,
+.jtm-slider-toggle.jtm-color-default { border-top-color: transparent; }
 .jtm-tab-link.jtm-color-red,
 .jtm-slider-toggle.jtm-color-red { border-top-color: #dc3545; }
 .jtm-tab-link.jtm-color-orange,
@@ -67,4 +93,4 @@
 .jtm-tab-link.jtm-color-black,
 .jtm-slider-toggle.jtm-color-black { border-top-color: #000; }
 .jtm-tab-link.jtm-color-white,
-.jtm-slider-toggle.jtm-color-white { border-top-color: #ccc; }
+.jtm-slider-toggle.jtm-color-white { border-top-color: #adb5bd; }

@@ -18,29 +18,35 @@ class JTM_Parser {
         $length = strlen( $content );
 
         while ( $offset < $length ) {
-            // El tipo de grupo lo decide el marcador (contenedor o item) que aparezca antes:
+            // El tipo de grupo lo decide el primer marcador (contenedor o item) que aparezca:
             // así un {/sliders} anidado dentro de un tab nunca se confunde con el cierre del {tabs} exterior.
-            $tabs_pos    = self::find_first( $content, array( '{tabs}', '{tab ' ), $offset );
-            $sliders_pos = self::find_first( $content, array( '{sliders}', '{slider ' ), $offset );
-
-            if ( false === $tabs_pos && false === $sliders_pos ) {
+            // Acepta {tab}, {tab Título}, {tabs}, {tabs params}, y equivalentes de slider (case-insensitive).
+            if ( ! preg_match( '/\{(tabs|sliders|tab|slider)(?:\s[^}]*)?\}/i', $content, $m, PREG_OFFSET_CAPTURE, $offset ) ) {
                 break;
             }
 
-            if ( false !== $tabs_pos && ( false === $sliders_pos || $tabs_pos <= $sliders_pos ) ) {
+            $marker     = strtolower( $m[1][0] );
+            $group_pos  = $m[0][1];
+            $marker_len = strlen( $m[0][0] );
+
+            if ( 'tabs' === $marker || 'tab' === $marker ) {
                 $group_type = 'tabs';
-                $group_pos  = $tabs_pos;
             } else {
                 $group_type = 'sliders';
-                $group_pos  = $sliders_pos;
             }
 
-            $close_tag = '{/' . $group_type . '}';
-            $close_pos = stripos( $content, $close_tag, $group_pos );
+            $is_container_start = ( 'tabs' === $marker || 'sliders' === $marker );
 
-            if ( false === $close_pos ) {
+            // Cierre balanceado: cuenta los contenedores anidados del mismo tipo
+            // (excluyendo la apertura exterior), así un {tabs} anidado dentro de
+            // un tab no cierra el grupo exterior.
+            $found = self::find_group_close( $content, $group_type, $group_pos + $marker_len, 0 );
+
+            if ( false === $found ) {
                 break; // Grupo sin cierre: se deja como texto plano más abajo.
             }
+
+            list( $close_pos, $close_len ) = $found;
 
             if ( $group_pos > $offset ) {
                 $nodes[] = array(
@@ -49,16 +55,25 @@ class JTM_Parser {
                 );
             }
 
-            $open_tag    = '{' . $group_type . '}';
-            $inner_start = ( stripos( $content, $open_tag, $group_pos ) === $group_pos ) ? $group_pos + strlen( $open_tag ) : $group_pos;
+            $inner_start = $is_container_start ? $group_pos + $marker_len : $group_pos;
             $item_tag    = ( $group_type === 'tabs' ) ? 'tab' : 'slider';
+            $inner       = substr( $content, $inner_start, $close_pos - $inner_start );
+            $items       = self::parse_items( $inner, $item_tag );
 
-            $nodes[] = array(
-                'type'  => $group_type === 'tabs' ? 'tabgroup' : 'slidergroup',
-                'items' => self::parse_items( substr( $content, $inner_start, $close_pos - $inner_start ), $item_tag ),
-            );
+            if ( empty( $items ) ) {
+                // Grupo vacío o sin items válidos: se conserva el texto original.
+                $nodes[] = array(
+                    'type' => 'html',
+                    'html' => substr( $content, $group_pos, $close_pos + $close_len - $group_pos ),
+                );
+            } else {
+                $nodes[] = array(
+                    'type'  => $group_type === 'tabs' ? 'tabgroup' : 'slidergroup',
+                    'items' => $items,
+                );
+            }
 
-            $offset = $close_pos + strlen( $close_tag );
+            $offset = $close_pos + $close_len;
         }
 
         if ( $offset < $length ) {
@@ -72,44 +87,107 @@ class JTM_Parser {
     }
 
     /**
-     * Devuelve la posición más temprana (desde $offset) de cualquiera de los marcadores dados, o false.
+     * Busca el cierre {/tabs} o {/sliders} que equilibra el grupo, contando
+     * los contenedores de apertura anidados del mismo tipo.
+     *
+     * @param string $content Contenido completo.
+     * @param string $group_type 'tabs' o 'sliders'.
+     * @param int    $from Posición desde la que escanear.
+     * @param int    $depth Profundidad inicial (1 si el grupo abrió con contenedor, 0 si abrió con item).
+     * @return array|false array( $close_pos, $close_len ) o false si no hay cierre.
      */
-    private static function find_first( $content, array $needles, $offset ) {
-        $best = false;
-        foreach ( $needles as $needle ) {
-            $pos = stripos( $content, $needle, $offset );
-            if ( false !== $pos && ( false === $best || $pos < $best ) ) {
-                $best = $pos;
+    private static function find_group_close( $content, $group_type, $from, $depth ) {
+        $re = ( $group_type === 'tabs' )
+            ? '/\{tabs(?:\s[^}]*)?\}|\{\/tabs\}/i'
+            : '/\{sliders(?:\s[^}]*)?\}|\{\/sliders\}/i';
+
+        $pos = $from;
+
+        while ( preg_match( $re, $content, $m, PREG_OFFSET_CAPTURE, $pos ) ) {
+            $token     = $m[0][0];
+            $token_pos = $m[0][1];
+            $token_len = strlen( $token );
+
+            if ( isset( $token[1] ) && '/' === $token[1] ) {
+                if ( $depth <= 0 ) {
+                    return array( $token_pos, $token_len );
+                }
+                $depth--;
+            } else {
+                $depth++;
             }
+
+            $pos = $token_pos + $token_len;
         }
-        return $best;
+
+        return false;
     }
 
     /**
      * Divide el contenido interno de {tabs}/{sliders} en items individuales.
      *
+     * Solo divide en los marcadores de item de nivel superior: los que aparecen
+     * dentro de contenedores anidados pertenecen al grupo anidado (recursión).
+     * Acepta {tab} vacío, {tab Título} y tabulaciones/espacios múltiples.
+     *
      * @param string $inner Contenido entre {tabs}...{/tabs}.
      * @param string $tag   'tab' o 'slider'.
      */
     private static function parse_items( $inner, $tag ) {
-        $items   = array();
-        $pattern = '/\{' . $tag . '\s+([^}]*)\}/i';
+        $starts = array();
 
-        preg_match_all( $pattern, $inner, $matches, PREG_OFFSET_CAPTURE );
+        if ( ! preg_match_all( '/\{\/?(?:tabs|sliders|tab|slider)(?:\s[^}]*)?\}/i', $inner, $m, PREG_OFFSET_CAPTURE ) ) {
+            return array();
+        }
 
-        $count = count( $matches[0] );
+        $depth = 0;
+
+        foreach ( $m[0] as $match ) {
+            $token     = $match[0];
+            $token_pos = $match[1];
+
+            if ( preg_match( '/^\{(tabs|sliders)(\s|\})/i', $token ) ) {
+                $depth++;
+                continue;
+            }
+
+            if ( preg_match( '/^\{\/(tabs|sliders)\}/i', $token ) ) {
+                $depth = max( 0, $depth - 1 );
+                continue;
+            }
+
+            // Marcador de item de nuestro tipo en nivel superior.
+            if ( 0 === $depth && preg_match( '/^\{' . preg_quote( $tag, '/' ) . '(\s|\})/i', $token ) ) {
+                $closing = strrpos( $token, '}' );
+                $inside  = substr( $token, 1, $closing - 1 );
+
+                if ( preg_match( '/^\S+\s+(.*)$/s', $inside, $hm ) ) {
+                    $header_raw = trim( $hm[1] );
+                } else {
+                    $header_raw = '';
+                }
+
+                $starts[] = array(
+                    'header'      => $header_raw,
+                    'marker_pos'  => $token_pos,
+                    'marker_end'  => $token_pos + strlen( $token ),
+                );
+            }
+        }
+
+        $items = array();
+        $count = count( $starts );
+
         for ( $i = 0; $i < $count; $i++ ) {
-            $header_raw = $matches[1][ $i ][0];
-            $marker_end = $matches[0][ $i ][1] + strlen( $matches[0][ $i ][0] );
-
-            $next_start = ( $i + 1 < $count ) ? $matches[0][ $i + 1 ][1] : strlen( $inner );
+            $marker_end = $starts[ $i ]['marker_end'];
+            $next_start = ( $i + 1 < $count ) ? $starts[ $i + 1 ]['marker_pos'] : strlen( $inner );
             $body       = substr( $inner, $marker_end, $next_start - $marker_end );
 
             // Elimina el cierre {/tab} o {/slider} si existe al final del bloque.
             $body = preg_replace( '/\{\/' . $tag . '\}\s*$/i', '', $body );
 
             // Parseo recursivo: un tab puede contener un grupo {slider}/{sliders} anidado.
-            $items[] = self::parse_header( $header_raw, $tag ) + array( 'body' => self::parse( trim( $body ) ) );
+            $items[] = self::parse_header( $starts[ $i ]['header'], $tag ) + array( 'body' => self::parse( trim( $body ) ) );
         }
 
         return $items;
@@ -130,8 +208,8 @@ class JTM_Parser {
             $lower = strtolower( $part );
             if ( in_array( $lower, array( 'open', 'close', 'closed' ), true ) ) {
                 $state = ( $lower === 'open' ) ? 'open' : 'closed';
-            } elseif ( self::is_color( $part ) ) {
-                $color = $lower;
+            } elseif ( '' !== ( $normalized = self::normalize_color( $part ) ) ) {
+                $color = $normalized;
             } else {
                 $alias = $part; // Puede contener # para anclas personalizadas.
             }
@@ -145,11 +223,30 @@ class JTM_Parser {
         );
     }
 
-    private static function is_color( $value ) {
-        $named = array( 'red', 'orange', 'yellow', 'green', 'blue', 'purple', 'gray', 'grey', 'black', 'white' );
-        if ( in_array( strtolower( $value ), $named, true ) ) {
-            return true;
+    /**
+     * Normaliza un color a su forma canónica o devuelve '' si no es color.
+     * Acepta nombres Joomla y hex de 3, 6 u 8 dígitos. grey → gray.
+     */
+    private static function normalize_color( $value ) {
+        $lower = strtolower( trim( $value ) );
+
+        if ( 'grey' === $lower ) {
+            return 'gray';
         }
-        return (bool) preg_match( '/^#[0-9a-f]{3,6}$/i', $value );
+
+        $named = array( 'red', 'orange', 'yellow', 'green', 'blue', 'purple', 'gray', 'black', 'white' );
+        if ( in_array( $lower, $named, true ) ) {
+            return $lower;
+        }
+
+        if ( preg_match( '/^#[0-9a-f]{3}([0-9a-f]{3}([0-9a-f]{2})?)?$/i', $lower ) ) {
+            return $lower;
+        }
+
+        return '';
+    }
+
+    private static function is_color( $value ) {
+        return '' !== self::normalize_color( $value );
     }
 }

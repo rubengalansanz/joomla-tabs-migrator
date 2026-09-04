@@ -1,2 +1,5 @@
 # Carpetas a ignorar
 /.idea/
+
+# Plan local de trabajo (no versionar)
+/plan-joomla-to-wordpress.md
